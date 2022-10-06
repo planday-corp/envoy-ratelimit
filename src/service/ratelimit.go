@@ -246,6 +246,8 @@ func (this *service) shouldRateLimitWorker(
 				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
 				this.aiClient.Track(&appinsights.RequestTelemetry{
 					Name:         metricName,
+					Url:          metricName,
+					Success:      true,
 					ResponseCode: "200",
 				})
 			}
