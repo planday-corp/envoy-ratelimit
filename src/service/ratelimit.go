@@ -258,7 +258,14 @@ func (this *service) shouldRateLimitWorker(
 			}
 			if this.aiClient != nil {
 				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
-				this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
+				this.aiClient.Track(&appinsights.RequestTelemetry{
+					Name:         metricName,
+					Url:          metricName,
+					Duration:     time.Duration(hitsAdded),
+					ResponseCode: statusCode,
+					Success:      statusCode == "200",
+				})
+				// this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
 			}
 		}
 	}
