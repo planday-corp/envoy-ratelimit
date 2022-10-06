@@ -11,6 +11,8 @@ jobs:
   build-and-push:
     name: Build and push Docker image to ACR
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # This is required for requesting the OIDC JWT
     steps:
       - uses: actions/checkout@v3
 
