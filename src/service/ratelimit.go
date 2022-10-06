@@ -241,14 +241,27 @@ func (this *service) shouldRateLimitWorker(
 		for _, entry := range descripter.Entries {
 			metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
 			hitsAdded := math.Max(1, float64(request.HitsAddend))
+
 			logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
+			var statusCode string
+			switch finalCode {
+			case pb.RateLimitResponse_OK:
+				statusCode = "200"
+				break
+			case pb.RateLimitResponse_OVER_LIMIT:
+				statusCode = "429"
+				break
+			case pb.RateLimitResponse_UNKNOWN:
+				statusCode = "500"
+				break
+			}
 			if this.aiClient != nil {
 				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
 				this.aiClient.Track(&appinsights.RequestTelemetry{
 					Name:         metricName,
 					Url:          metricName,
 					Success:      true,
-					ResponseCode: "200",
+					ResponseCode: statusCode,
 				})
 			}
 		}
