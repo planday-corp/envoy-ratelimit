@@ -242,10 +242,13 @@ func (this *service) shouldRateLimitWorker(
 			metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
 			hitsAdded := math.Max(1, float64(request.HitsAddend))
 			logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
-			this.aiClient.Track(&appinsights.MetricTelemetry{
-				Name:  metricName,
-				Value: hitsAdded,
-			})
+			if this.aiClient != nil {
+				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
+				this.aiClient.Track(&appinsights.RequestTelemetry{
+					Name:         metricName,
+					ResponseCode: "200",
+				})
+			}
 		}
 	}
 
