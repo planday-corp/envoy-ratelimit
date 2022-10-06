@@ -51,7 +51,7 @@ type service struct {
 	customHeaderResetHeader     string
 	customHeaderClock           utils.TimeSource
 	globalShadowMode            bool
-	aiClient                    *appinsights.TelemetryClient
+	aiClient                    appinsights.TelemetryClient
 }
 
 func (this *service) reloadConfig(statsManager stats.Manager) {
@@ -243,7 +243,7 @@ func (this *service) shouldRateLimitWorker(
 			metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
 			hitsAdded := math.Max(1, float64(request.HitsAddend))
 			logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
-			(*this.aiClient).TrackMetric(metricName, hitsAdded)
+			this.aiClient.TrackMetric(metricName, hitsAdded)
 		}
 	}
 
@@ -327,7 +327,7 @@ func (this *service) GetCurrentConfig() config.RateLimitConfig {
 
 func NewService(runtime loader.IFace, cache limiter.RateLimitCache,
 	configLoader config.RateLimitConfigLoader, statsManager stats.Manager, runtimeWatchRoot bool, clock utils.TimeSource,
-	shadowMode bool, aiClient *appinsights.TelemetryClient) RateLimitServiceServer {
+	shadowMode bool, aiClient appinsights.TelemetryClient) RateLimitServiceServer {
 
 	newService := &service{
 		runtime:            runtime,

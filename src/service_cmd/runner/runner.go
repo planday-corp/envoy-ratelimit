@@ -117,11 +117,11 @@ func (runner *Runner) Run() {
 	runner.srv = srv
 	runner.mu.Unlock()
 
-	var aiClient *appinsights.TelemetryClient
+	var aiClient appinsights.TelemetryClient
 	// setup application insight client
 	if s.ApplicationInsightInstrumentationKey != "" {
-		client := appinsights.NewTelemetryClient(s.ApplicationInsightInstrumentationKey)
-		aiClient = &client
+		aiClient = appinsights.NewTelemetryClient(s.ApplicationInsightInstrumentationKey)
+		logger.Info("CREATED App Insight Client")
 	}
 
 	service := ratelimit.NewService(
