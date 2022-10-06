@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -257,12 +258,7 @@ func (this *service) shouldRateLimitWorker(
 			}
 			if this.aiClient != nil {
 				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
-				this.aiClient.Track(&appinsights.RequestTelemetry{
-					Name:         metricName,
-					Url:          metricName,
-					Success:      true,
-					ResponseCode: statusCode,
-				})
+				this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
 			}
 		}
 	}
