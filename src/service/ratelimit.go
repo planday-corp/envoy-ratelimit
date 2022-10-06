@@ -237,9 +237,12 @@ func (this *service) shouldRateLimitWorker(
 
 	response.OverallCode = finalCode
 
+	logger.Info("Test stuff")
 	for _, descripter := range request.Descriptors {
 		for _, entry := range descripter.Entries {
-			(*this.aiClient).TrackMetric(fmt.Sprintf("%s_%s", entry.Key, entry.Value), float64(request.HitsAddend))
+			metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
+			logger.Infof("Trying to log for metric: %s", metricName)
+			(*this.aiClient).TrackMetric(metricName, float64(request.HitsAddend))
 		}
 	}
 
