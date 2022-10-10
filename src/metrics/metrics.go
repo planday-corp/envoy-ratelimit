@@ -46,7 +46,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		resp, err := handler(ctx, req)
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
-		r.aiClient.TrackRequest("POST", "/test", time.Duration(time.Since(start).Milliseconds()), "200")
+		r.aiClient.TrackRequest("POST", "/test", time.Since(start), "200")
 		return resp, err
 	}
 }
