@@ -257,15 +257,9 @@ func (this *service) shouldRateLimitWorker(
 				break
 			}
 			if this.aiClient != nil {
-				logger.Infof("We have ai client - %s", this.aiClient.InstrumentationKey())
-				this.aiClient.Track(&appinsights.RequestTelemetry{
-					Name:         metricName,
-					Url:          metricName,
-					Duration:     time.Duration(hitsAdded),
-					ResponseCode: statusCode,
-					Success:      statusCode == "200",
-				})
-				// this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
+				go this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
+			} else {
+				logger.Warn("Unable to get Application Insight Client")
 			}
 		}
 	}

@@ -110,19 +110,19 @@ func (runner *Runner) Run() {
 		localCache = freecache.NewCache(s.LocalCacheSizeInBytes)
 	}
 
-	serverReporter := metrics.NewServerReporter(runner.statsManager.GetStatsStore().ScopeWithTags("ratelimit_server", s.ExtraTags))
-
-	srv := server.NewServer(s, "ratelimit", runner.statsManager, localCache, settings.GrpcUnaryInterceptor(serverReporter.UnaryServerInterceptor()))
-	runner.mu.Lock()
-	runner.srv = srv
-	runner.mu.Unlock()
-
 	var aiClient appinsights.TelemetryClient
 	// setup application insight client
 	if s.ApplicationInsightInstrumentationKey != "" {
 		aiClient = appinsights.NewTelemetryClient(s.ApplicationInsightInstrumentationKey)
 		logger.Info("CREATED App Insight Client")
 	}
+
+	serverReporter := metrics.NewServerReporter(runner.statsManager.GetStatsStore().ScopeWithTags("ratelimit_server", s.ExtraTags), aiClient)
+
+	srv := server.NewServer(s, "ratelimit", runner.statsManager, localCache, settings.GrpcUnaryInterceptor(serverReporter.UnaryServerInterceptor()))
+	runner.mu.Lock()
+	runner.srv = srv
+	runner.mu.Unlock()
 
 	service := ratelimit.NewService(
 		srv.Runtime(),

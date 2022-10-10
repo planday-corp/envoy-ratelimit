@@ -5,6 +5,7 @@ import (
 	"time"
 
 	stats "github.com/lyft/gostats"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 	"google.golang.org/grpc"
 )
 
@@ -15,7 +16,8 @@ type serverMetrics struct {
 
 // ServerReporter reports server-side metrics for ratelimit gRPC server
 type ServerReporter struct {
-	scope stats.Scope
+	scope    stats.Scope
+	aiClient appinsights.TelemetryClient
 }
 
 func newServerMetrics(scope stats.Scope, fullMethod string) *serverMetrics {
@@ -27,20 +29,24 @@ func newServerMetrics(scope stats.Scope, fullMethod string) *serverMetrics {
 }
 
 // NewServerReporter returns a ServerReporter object.
-func NewServerReporter(scope stats.Scope) *ServerReporter {
+func NewServerReporter(scope stats.Scope, aiClient appinsights.TelemetryClient) *ServerReporter {
 	return &ServerReporter{
-		scope: scope,
+		scope:    scope,
+		aiClient: aiClient,
 	}
 }
 
 // UnaryServerInterceptor is a gRPC server-side interceptor that provides server metrics for Unary RPCs.
 func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+
 		start := time.Now()
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
+
+		r.aiClient.TrackRequest("POST", "/test", time.Duration(time.Since(start).Microseconds()), "200")
 		return resp, err
 	}
 }
