@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-	logger "github.com/sirupsen/logrus"
 	"time"
 
 	envoy_service_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
@@ -55,13 +54,12 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 
 			if reqOk && respOk {
 
-				logger.Infof("Overall code %s", rlResp.OverallCode.String())
 				var statusCode string
 				switch rlResp.OverallCode {
-				case 200:
+				case 1: // OK
 					statusCode = "200"
 					break
-				case 429:
+				case 2: // OVER_LIMIT
 					statusCode = "429"
 					break
 				default:
