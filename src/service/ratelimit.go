@@ -176,9 +176,14 @@ const MaxUint32 = uint32(1<<32 - 1)
 
 func (this *service) shouldRateLimitWorker(
 	ctx context.Context, request *pb.RateLimitRequest) *pb.RateLimitResponse {
+	snappedConfig := this.GetCurrentConfig()
+	checkServiceErr(snappedConfig != nil, "no rate limit configuration loaded")
 
 	checkServiceErr(request.Domain != "", "rate limit domain must not be empty")
 	checkServiceErr(len(request.Descriptors) != 0, "rate limit descriptor list must not be empty")
+
+	ignoredSubnets := snappedConfig.GetIgnoredSubnets(ctx)
+	logger.Infof("These subnets needs to be ignored - %v", ignoredSubnets)
 
 	limitsToCheck, isUnlimited := this.constructLimitsToCheck(request, ctx)
 
@@ -234,32 +239,6 @@ func (this *service) shouldRateLimitWorker(
 	}
 
 	response.OverallCode = finalCode
-
-	// for _, descripter := range request.Descriptors {
-	// 	for _, entry := range descripter.Entries {
-	// 		metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
-	// 		hitsAdded := math.Max(1, float64(request.HitsAddend))
-
-	// 		logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
-	// 		var statusCode string
-	// 		switch finalCode {
-	// 		case pb.RateLimitResponse_OK:
-	// 			statusCode = "200"
-	// 			break
-	// 		case pb.RateLimitResponse_OVER_LIMIT:
-	// 			statusCode = "429"
-	// 			break
-	// 		case pb.RateLimitResponse_UNKNOWN:
-	// 			statusCode = "500"
-	// 			break
-	// 		}
-	// 		if this.aiClient != nil {
-	// 			// go this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
-	// 		} else {
-	// 			logger.Warn("Unable to get Application Insight Client")
-	// 		}
-	// 	}
-	// }
 
 	return response
 }

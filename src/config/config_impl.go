@@ -33,9 +33,14 @@ type yamlDescriptor struct {
 	ShadowMode  bool `yaml:"shadow_mode"`
 }
 
+type yamlSubnet struct {
+	Subnet string `yaml:"subnet"`
+}
+
 type yamlRoot struct {
-	Domain      string
-	Descriptors []yamlDescriptor
+	Domain         string
+	Descriptors    []yamlDescriptor
+	IgnoredSubnets []yamlSubnet `yaml:"ignoredSubnets"`
 }
 
 type rateLimitDescriptor struct {
@@ -51,6 +56,7 @@ type rateLimitConfigImpl struct {
 	domains            map[string]*rateLimitDomain
 	statsManager       stats.Manager
 	mergeDomainConfigs bool
+	ignoredSubnets     []string
 }
 
 var validKeys = map[string]bool{
@@ -65,6 +71,8 @@ var validKeys = map[string]bool{
 	"shadow_mode":       true,
 	"name":              true,
 	"replaces":          true,
+	"ignoredSubnets":    true,
+	"subnet":            true,
 }
 
 // Create a new rate limit config entry.
@@ -272,6 +280,11 @@ func (this *rateLimitConfigImpl) loadConfig(config RateLimitConfigToLoad) {
 	newDomain := &rateLimitDomain{rateLimitDescriptor{map[string]*rateLimitDescriptor{}, nil}}
 	newDomain.loadDescriptors(config, root.Domain+".", root.Descriptors, this.statsManager)
 	this.domains[root.Domain] = newDomain
+
+	this.ignoredSubnets = make([]string, len(root.IgnoredSubnets))
+	for i := range root.IgnoredSubnets {
+		this.ignoredSubnets[i] = root.IgnoredSubnets[i].Subnet
+	}
 }
 
 func (this *rateLimitConfigImpl) Dump() string {
@@ -343,6 +356,10 @@ func (this *rateLimitConfigImpl) GetLimit(
 	return rateLimit
 }
 
+func (this *rateLimitConfigImpl) GetIgnoredSubnets(ctx context.Context) []string {
+	return this.ignoredSubnets
+}
+
 func descriptorKey(domain string, descriptor *pb_struct.RateLimitDescriptor) string {
 	rateLimitKey := ""
 	for _, entry := range descriptor.Entries {
@@ -365,7 +382,7 @@ func descriptorKey(domain string, descriptor *pb_struct.RateLimitDescriptor) str
 func NewRateLimitConfigImpl(
 	configs []RateLimitConfigToLoad, statsManager stats.Manager, mergeDomainConfigs bool) RateLimitConfig {
 
-	ret := &rateLimitConfigImpl{map[string]*rateLimitDomain{}, statsManager, mergeDomainConfigs}
+	ret := &rateLimitConfigImpl{map[string]*rateLimitDomain{}, statsManager, mergeDomainConfigs, []string{}}
 	for _, config := range configs {
 		ret.loadConfig(config)
 	}
