@@ -67,8 +67,7 @@ var validKeys = map[string]bool{
 	"shadow_mode":       true,
 	"name":              true,
 	"replaces":          true,
-	"ignoredSubnets":    true,
-	"subnet":            true,
+	"ignored_subnets":   true,
 }
 
 // Create a new rate limit config entry.
