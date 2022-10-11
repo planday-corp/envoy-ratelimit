@@ -2,12 +2,12 @@ package metrics
 
 import (
 	"context"
-	"reflect"
+	"fmt"
 	"time"
 
+	envoy_service_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
 	aiworker "github.com/envoyproxy/ratelimit/src/ai_worker"
 	stats "github.com/lyft/gostats"
-	logger "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -43,21 +43,45 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
 
-		defer func() {
-			queue := *r.aiWorker.GetRequestQueue()
-			queue <- aiworker.NewTrackRequest("POST", "/test", time.Since(start), "200")
-		}()
-
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
-
-		logger.Infof("%s", reflect.TypeOf(req).Kind())
-
-		logger.Info(req, reflect.TypeOf(req))
-		logger.Info(resp, reflect.TypeOf(resp).Kind())
-
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
+
+		go func() {
+			rlReq, reqOk := req.(envoy_service_ratelimit_v3.RateLimitRequest)
+			rlResp, respOk := resp.(envoy_service_ratelimit_v3.RateLimitResponse)
+			if reqOk && respOk {
+
+				var statusCode string
+				switch rlResp.OverallCode {
+				case 200:
+					statusCode = "200"
+					break
+				case 429:
+					statusCode = "429"
+					break
+				default:
+					statusCode = "500"
+				}
+
+				ipValue := ""
+
+				for _, descriptor := range rlReq.Descriptors {
+					for _, entry := range descriptor.Entries {
+						if entry.Key == "IP" {
+							ipValue = entry.Value
+						}
+					}
+				}
+
+				if ipValue != "" {
+					queue := *r.aiWorker.GetRequestQueue()
+					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), time.Since(start), statusCode)
+				}
+			}
+		}()
+
 		return resp, err
 	}
 }
