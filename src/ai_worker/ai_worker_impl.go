@@ -1,11 +1,18 @@
 package aiworker
 
 import (
+	"sync"
 	"time"
 
 	"github.com/envoyproxy/ratelimit/src/settings"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
+	logger "github.com/sirupsen/logrus"
 )
+
+type concurrentSlice struct {
+	sync.RWMutex
+	items []TrackRequest
+}
 
 func NewTrackRequest(method string, url string, duration time.Duration, statusCode string) TrackRequest {
 	return TrackRequest{
@@ -19,7 +26,7 @@ func NewTrackRequest(method string, url string, duration time.Duration, statusCo
 type aiWorker struct {
 	requestQueue chan TrackRequest
 	aiClient     appinsights.TelemetryClient
-	isRunning    bool
+	quitChannel  chan struct{}
 }
 
 func NewAiWorker(s settings.Settings) AiWorker {
@@ -31,6 +38,7 @@ func NewAiWorker(s settings.Settings) AiWorker {
 	}
 
 	ret.requestQueue = make(chan TrackRequest)
+	ret.quitChannel = make(chan struct{})
 
 	return ret
 }
@@ -40,14 +48,43 @@ func (w *aiWorker) GetRequestQueue() *chan TrackRequest {
 }
 
 func (w *aiWorker) Start() {
-	w.isRunning = true
-	for w.isRunning {
-		request := <-w.requestQueue
+	ticker := time.NewTicker(5 * time.Second)
+	cs := concurrentSlice{items: []TrackRequest{}}
 
-		w.aiClient.TrackRequest(request.method, request.url, request.duration, request.statusCode)
-	}
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				cs.Lock()
+				defer cs.Unlock()
+
+				for _, item := range cs.items {
+					w.aiClient.TrackRequest(item.method, item.url, item.duration, item.statusCode)
+				}
+			case <-w.quitChannel:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case request := <-w.requestQueue:
+				cs.Lock()
+				defer cs.Unlock()
+
+				cs.items = append(cs.items, request)
+			case <-w.quitChannel:
+				return
+			}
+		}
+	}()
+
+	logger.Info("Started Application Insight Worker")
 }
 
 func (w *aiWorker) Stop() {
-	w.isRunning = false
+	close(w.quitChannel)
 }

@@ -39,16 +39,17 @@ func NewServerReporter(scope stats.Scope, aiWorker aiworker.AiWorker) *ServerRep
 // UnaryServerInterceptor is a gRPC server-side interceptor that provides server metrics for Unary RPCs.
 func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-
 		start := time.Now()
+
+		defer func() {
+			queue := *r.aiWorker.GetRequestQueue()
+			queue <- aiworker.NewTrackRequest("POST", "/test", time.Since(start), "200")
+		}()
+
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
-
-		queue := *r.aiWorker.GetRequestQueue()
-		queue <- aiworker.NewTrackRequest("POST", "/test", time.Since(start), "200")
-
 		return resp, err
 	}
 }
