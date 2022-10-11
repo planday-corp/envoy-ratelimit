@@ -43,7 +43,6 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		start := time.Now()
 
 		defer func() {
-
 			queue := *r.aiWorker.GetRequestQueue()
 			queue <- aiworker.NewTrackRequest("POST", "/test", time.Since(start), "200")
 		}()
@@ -51,7 +50,10 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
+
+		logger.Info(req)
 		logger.Info(resp)
+
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 		return resp, err
 	}
