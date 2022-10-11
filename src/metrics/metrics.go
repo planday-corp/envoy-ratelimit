@@ -52,7 +52,9 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
 
-		logger.Info(req, reflect.TypeOf(req).Kind())
+		logger.Infof("%s", reflect.TypeOf(req).Kind())
+
+		logger.Info(req, reflect.TypeOf(req))
 		logger.Info(resp, reflect.TypeOf(resp).Kind())
 
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
