@@ -33,14 +33,10 @@ type yamlDescriptor struct {
 	ShadowMode  bool `yaml:"shadow_mode"`
 }
 
-type yamlSubnet struct {
-	Subnet string `yaml:"subnet"`
-}
-
 type yamlRoot struct {
 	Domain         string
 	Descriptors    []yamlDescriptor
-	IgnoredSubnets []yamlSubnet `yaml:"ignoredSubnets"`
+	IgnoredSubnets []string `yaml:"ignored_subnets"`
 }
 
 type rateLimitDescriptor struct {
@@ -283,7 +279,7 @@ func (this *rateLimitConfigImpl) loadConfig(config RateLimitConfigToLoad) {
 
 	this.ignoredSubnets = make([]string, len(root.IgnoredSubnets))
 	for i := range root.IgnoredSubnets {
-		this.ignoredSubnets[i] = root.IgnoredSubnets[i].Subnet
+		this.ignoredSubnets[i] = root.IgnoredSubnets[i]
 	}
 }
 
