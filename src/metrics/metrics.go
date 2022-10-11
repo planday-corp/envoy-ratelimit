@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	logger "github.com/sirupsen/logrus"
-	"reflect"
 	"time"
 
 	envoy_service_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
@@ -50,16 +49,13 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		resp, err := handler(ctx, req)
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
-		logger.Infof("Req is of type - %v - %v", reflect.TypeOf(req), reflect.TypeOf(req).Kind())
-		logger.Infof("Resp is of type - %v - %v", reflect.TypeOf(resp), reflect.TypeOf(resp).Kind())
-
 		go func() {
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
-			logger.Infof("Is Req Ok - %t", reqOk)
-			logger.Infof("Is Resp Ok - %t", respOk)
+
 			if reqOk && respOk {
 
+				logger.Infof("Overall code %v", rlResp.OverallCode)
 				var statusCode string
 				switch rlResp.OverallCode {
 				case 200:
@@ -81,8 +77,6 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 						}
 					}
 				}
-
-				logger.Infof("Tracking request from ip %s", ipValue)
 
 				if ipValue != "" {
 					queue := *r.aiWorker.GetRequestQueue()
