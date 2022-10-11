@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	aiworker "github.com/envoyproxy/ratelimit/src/ai_worker"
@@ -51,8 +52,8 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
 
-		logger.Info(req)
-		logger.Info(resp)
+		logger.Info(req, reflect.TypeOf(req).Kind())
+		logger.Info(resp, reflect.TypeOf(resp).Kind())
 
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 		return resp, err
