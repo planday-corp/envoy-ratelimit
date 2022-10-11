@@ -49,6 +49,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
 		go func() {
+			return
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 
