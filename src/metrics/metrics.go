@@ -54,8 +54,8 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		logger.Infof("Resp is of type - %v - %v", reflect.TypeOf(resp), reflect.TypeOf(resp).Kind())
 
 		go func() {
-			rlReq, reqOk := req.(envoy_service_ratelimit_v3.RateLimitRequest)
-			rlResp, respOk := resp.(envoy_service_ratelimit_v3.RateLimitResponse)
+			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
+			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 			logger.Infof("Is Req Ok - %t", reqOk)
 			logger.Infof("Is Resp Ok - %t", respOk)
 			if reqOk && respOk {
