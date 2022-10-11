@@ -1,18 +1,12 @@
 package aiworker
 
 import (
-	"sync"
 	"time"
 
 	"github.com/envoyproxy/ratelimit/src/settings"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 	logger "github.com/sirupsen/logrus"
 )
-
-type concurrentSlice struct {
-	sync.RWMutex
-	items []TrackRequest
-}
 
 func NewTrackRequest(method string, url string, duration time.Duration, statusCode string) TrackRequest {
 	return TrackRequest{
@@ -48,34 +42,11 @@ func (w *aiWorker) GetRequestQueue() *chan TrackRequest {
 }
 
 func (w *aiWorker) Start() {
-	ticker := time.NewTicker(5 * time.Second)
-	cs := concurrentSlice{items: []TrackRequest{}}
-
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				cs.Lock()
-				defer cs.Unlock()
-
-				for _, item := range cs.items {
-					w.aiClient.TrackRequest(item.method, item.url, item.duration, item.statusCode)
-				}
-			case <-w.quitChannel:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-
 	go func() {
 		for {
 			select {
 			case request := <-w.requestQueue:
-				cs.Lock()
-				defer cs.Unlock()
-
-				cs.items = append(cs.items, request)
+				w.aiClient.TrackRequest(request.method, request.url, request.duration, request.statusCode)
 			case <-w.quitChannel:
 				return
 			}
