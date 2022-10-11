@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	aiworker "github.com/envoyproxy/ratelimit/src/ai_worker"
 	stats "github.com/lyft/gostats"
-	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 	"google.golang.org/grpc"
 )
 
@@ -17,7 +17,7 @@ type serverMetrics struct {
 // ServerReporter reports server-side metrics for ratelimit gRPC server
 type ServerReporter struct {
 	scope    stats.Scope
-	aiClient appinsights.TelemetryClient
+	aiWorker aiworker.AiWorker
 }
 
 func newServerMetrics(scope stats.Scope, fullMethod string) *serverMetrics {
@@ -29,10 +29,10 @@ func newServerMetrics(scope stats.Scope, fullMethod string) *serverMetrics {
 }
 
 // NewServerReporter returns a ServerReporter object.
-func NewServerReporter(scope stats.Scope, aiClient appinsights.TelemetryClient) *ServerReporter {
+func NewServerReporter(scope stats.Scope, aiWorker aiworker.AiWorker) *ServerReporter {
 	return &ServerReporter{
 		scope:    scope,
-		aiClient: aiClient,
+		aiWorker: aiWorker,
 	}
 }
 
@@ -46,7 +46,9 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		resp, err := handler(ctx, req)
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
-		r.aiClient.TrackRequest("POST", "/test", time.Since(start), "200")
+		queue := *r.aiWorker.GetRequestQueue()
+		queue <- aiworker.NewTrackRequest("POST", "/test", time.Since(start), "200")
+
 		return resp, err
 	}
 }

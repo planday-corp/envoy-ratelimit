@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
+	aiworker "github.com/envoyproxy/ratelimit/src/ai_worker"
 	"github.com/envoyproxy/ratelimit/src/metrics"
 	"github.com/envoyproxy/ratelimit/src/stats"
 	"github.com/envoyproxy/ratelimit/src/trace"
-	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 
 	gostats "github.com/lyft/gostats"
 
@@ -37,6 +37,7 @@ type Runner struct {
 	settings     settings.Settings
 	srv          server.Server
 	mu           sync.Mutex
+	aiWorker     aiworker.AiWorker
 }
 
 func NewRunner(s settings.Settings) Runner {
@@ -109,15 +110,10 @@ func (runner *Runner) Run() {
 	if s.LocalCacheSizeInBytes != 0 {
 		localCache = freecache.NewCache(s.LocalCacheSizeInBytes)
 	}
+	aiWorker := aiworker.NewAiWorker(s)
+	runner.aiWorker = aiWorker
 
-	var aiClient appinsights.TelemetryClient
-	// setup application insight client
-	if s.ApplicationInsightInstrumentationKey != "" {
-		aiClient = appinsights.NewTelemetryClient(s.ApplicationInsightInstrumentationKey)
-		logger.Info("CREATED App Insight Client")
-	}
-
-	serverReporter := metrics.NewServerReporter(runner.statsManager.GetStatsStore().ScopeWithTags("ratelimit_server", s.ExtraTags), aiClient)
+	serverReporter := metrics.NewServerReporter(runner.statsManager.GetStatsStore().ScopeWithTags("ratelimit_server", s.ExtraTags), runner.aiWorker)
 
 	srv := server.NewServer(s, "ratelimit", runner.statsManager, localCache, settings.GrpcUnaryInterceptor(serverReporter.UnaryServerInterceptor()))
 	runner.mu.Lock()
@@ -132,7 +128,6 @@ func (runner *Runner) Run() {
 		s.RuntimeWatchRoot,
 		utils.NewTimeSourceImpl(),
 		s.GlobalShadowMode,
-		aiClient,
 	)
 
 	srv.AddDebugHttpEndpoint(
@@ -151,14 +146,19 @@ func (runner *Runner) Run() {
 	// v2 proto is no longer supported
 	pb.RegisterRateLimitServiceServer(srv.GrpcServer(), service)
 
+	go aiWorker.Start()
 	srv.Start()
 }
 
 func (runner *Runner) Stop() {
 	runner.mu.Lock()
 	srv := runner.srv
+	aiWorker := runner.aiWorker
 	runner.mu.Unlock()
 	if srv != nil {
 		srv.Stop()
+	}
+	if aiWorker != nil {
+		aiWorker.Stop()
 	}
 }

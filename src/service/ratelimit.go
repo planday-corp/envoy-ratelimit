@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/envoyproxy/ratelimit/src/settings"
 	"github.com/envoyproxy/ratelimit/src/stats"
-	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 
 	"github.com/envoyproxy/ratelimit/src/utils"
 
@@ -52,7 +50,6 @@ type service struct {
 	customHeaderResetHeader     string
 	customHeaderClock           utils.TimeSource
 	globalShadowMode            bool
-	aiClient                    appinsights.TelemetryClient
 }
 
 func (this *service) reloadConfig(statsManager stats.Manager) {
@@ -238,31 +235,31 @@ func (this *service) shouldRateLimitWorker(
 
 	response.OverallCode = finalCode
 
-	for _, descripter := range request.Descriptors {
-		for _, entry := range descripter.Entries {
-			metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
-			hitsAdded := math.Max(1, float64(request.HitsAddend))
+	// for _, descripter := range request.Descriptors {
+	// 	for _, entry := range descripter.Entries {
+	// 		metricName := fmt.Sprintf("%s_%s", entry.Key, entry.Value)
+	// 		hitsAdded := math.Max(1, float64(request.HitsAddend))
 
-			logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
-			var statusCode string
-			switch finalCode {
-			case pb.RateLimitResponse_OK:
-				statusCode = "200"
-				break
-			case pb.RateLimitResponse_OVER_LIMIT:
-				statusCode = "429"
-				break
-			case pb.RateLimitResponse_UNKNOWN:
-				statusCode = "500"
-				break
-			}
-			if this.aiClient != nil {
-				go this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
-			} else {
-				logger.Warn("Unable to get Application Insight Client")
-			}
-		}
-	}
+	// 		logger.Infof("Trying to log for metric: %s - %f", metricName, hitsAdded)
+	// 		var statusCode string
+	// 		switch finalCode {
+	// 		case pb.RateLimitResponse_OK:
+	// 			statusCode = "200"
+	// 			break
+	// 		case pb.RateLimitResponse_OVER_LIMIT:
+	// 			statusCode = "429"
+	// 			break
+	// 		case pb.RateLimitResponse_UNKNOWN:
+	// 			statusCode = "500"
+	// 			break
+	// 		}
+	// 		if this.aiClient != nil {
+	// 			// go this.aiClient.TrackRequest("POST", metricName, time.Duration(hitsAdded), statusCode)
+	// 		} else {
+	// 			logger.Warn("Unable to get Application Insight Client")
+	// 		}
+	// 	}
+	// }
 
 	return response
 }
@@ -344,7 +341,7 @@ func (this *service) GetCurrentConfig() config.RateLimitConfig {
 
 func NewService(runtime loader.IFace, cache limiter.RateLimitCache,
 	configLoader config.RateLimitConfigLoader, statsManager stats.Manager, runtimeWatchRoot bool, clock utils.TimeSource,
-	shadowMode bool, aiClient appinsights.TelemetryClient) RateLimitServiceServer {
+	shadowMode bool) RateLimitServiceServer {
 
 	newService := &service{
 		runtime:            runtime,
@@ -357,7 +354,6 @@ func NewService(runtime loader.IFace, cache limiter.RateLimitCache,
 		runtimeWatchRoot:   runtimeWatchRoot,
 		globalShadowMode:   shadowMode,
 		customHeaderClock:  clock,
-		aiClient:           aiClient,
 	}
 
 	runtime.AddUpdateCallback(newService.runtimeUpdateEvent)
