@@ -55,7 +55,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 
 			if reqOk && respOk {
 
-				logger.Infof("Overall code %v", rlResp.OverallCode)
+				logger.Infof("Overall code %s", rlResp.OverallCode.String())
 				var statusCode string
 				switch rlResp.OverallCode {
 				case 200:
