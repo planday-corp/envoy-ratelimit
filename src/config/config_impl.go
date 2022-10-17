@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"net"
+	net "net"
 	"strings"
 
 	pb_struct "github.com/envoyproxy/go-control-plane/envoy/extensions/common/ratelimit/v3"
@@ -363,7 +363,7 @@ func (this *rateLimitConfigImpl) GetLimit(
 }
 
 func (this *rateLimitConfigImpl) GetIgnoredSubnets(ctx context.Context) []*net.IPNet {
-	var list []*net.IPNet
+	list := make([]*net.IPNet, 0)
 
 	logger.Infof("Subnets str - %v", this.ignoredSubnets)
 	for _, subnetStr := range this.ignoredSubnets {
