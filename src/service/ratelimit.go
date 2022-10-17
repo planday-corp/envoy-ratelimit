@@ -3,6 +3,7 @@ package ratelimit
 import (
 	"fmt"
 	"math"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -232,10 +233,32 @@ func (this *service) shouldRateLimitWorker(
 		}
 	}
 
+	ignoreRateLimit := false
+	for _, descriptor := range request.Descriptors {
+		for _, entry := range descriptor.Entries {
+			if ignoreRateLimit {
+				break
+			}
+			if entry.Key == "IP" {
+				for _, subnet := range ignoredSubnets {
+					ip := net.ParseIP(entry.Value)
+					if subnet.Contains(ip) {
+						ignoreRateLimit = true
+						break
+					}
+				}
+			}
+		}
+	}
+
 	// If there is a global shadow_mode, it should always return OK
 	if finalCode == pb.RateLimitResponse_OVER_LIMIT && this.globalShadowMode {
 		finalCode = pb.RateLimitResponse_OK
 		this.stats.GlobalShadowMode.Inc()
+	}
+
+	if ignoreRateLimit {
+		finalCode = pb.RateLimitResponse_OK
 	}
 
 	response.OverallCode = finalCode

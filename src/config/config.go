@@ -4,6 +4,7 @@ import (
 	pb_struct "github.com/envoyproxy/go-control-plane/envoy/extensions/common/ratelimit/v3"
 	pb "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
 	"golang.org/x/net/context"
+	"net"
 
 	"github.com/envoyproxy/ratelimit/src/stats"
 )
@@ -38,7 +39,7 @@ type RateLimitConfig interface {
 	// @return a rate limit to apply or nil if no rate limit is configured for the descriptor.
 	GetLimit(ctx context.Context, domain string, descriptor *pb_struct.RateLimitDescriptor) *RateLimit
 
-	GetIgnoredSubnets(ctx context.Context) []string
+	GetIgnoredSubnets(ctx context.Context) []*net.IPNet
 }
 
 // Information for a config file to load into the aggregate config.
