@@ -363,11 +363,14 @@ func (this *rateLimitConfigImpl) GetLimit(
 }
 
 func (this *rateLimitConfigImpl) GetIgnoredSubnets(ctx context.Context) []*net.IPNet {
-	list := make([]*net.IPNet, 0)
+	var list []*net.IPNet
 
 	logger.Infof("Subnets str - %v", this.ignoredSubnets)
 	for _, subnetStr := range this.ignoredSubnets {
 		logger.Infof("Testing")
+		if len(subnetStr) == 0 {
+			continue
+		}
 		_, subnet, _ := net.ParseCIDR(subnetStr)
 		list = append(list, subnet)
 	}
