@@ -367,7 +367,6 @@ func (this *rateLimitConfigImpl) GetIgnoredSubnets(ctx context.Context) []*net.I
 
 	logger.Infof("Subnets str - %v", this.ignoredSubnets)
 	for _, subnetStr := range this.ignoredSubnets {
-		logger.Infof("Testing")
 		if len(subnetStr) == 0 {
 			continue
 		}

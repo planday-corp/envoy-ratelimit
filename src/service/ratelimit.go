@@ -234,17 +234,19 @@ func (this *service) shouldRateLimitWorker(
 	}
 
 	ignoreRateLimit := false
-	for _, descriptor := range request.Descriptors {
-		for _, entry := range descriptor.Entries {
-			if ignoreRateLimit {
-				break
-			}
-			if entry.Key == "IP" {
-				for _, subnet := range ignoredSubnets {
-					ip := net.ParseIP(entry.Value)
-					if subnet.Contains(ip) {
-						ignoreRateLimit = true
-						break
+	if len(ignoredSubnets) > 0 {
+		for _, descriptor := range request.Descriptors {
+			for _, entry := range descriptor.Entries {
+				if ignoreRateLimit {
+					break
+				}
+				if entry.Key == "IP" {
+					for _, subnet := range ignoredSubnets {
+						ip := net.ParseIP(entry.Value)
+						if subnet.Contains(ip) {
+							ignoreRateLimit = true
+							break
+						}
 					}
 				}
 			}
