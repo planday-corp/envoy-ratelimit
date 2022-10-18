@@ -201,13 +201,10 @@ func (this *rateLimitDescriptor) loadDescriptors(config RateLimitConfigToLoad, p
 // @param any specifies the yaml file and a map.
 func validateYamlKeys(config RateLimitConfigToLoad, config_map map[interface{}]interface{}) {
 	for k, v := range config_map {
-		skipChildren := false
-		if key, ok := k.(string); !ok {
+		if _, ok := k.(string); !ok {
 			errorText := fmt.Sprintf("config error, key is not of type string: %v", k)
 			logger.Debugf(errorText)
 			panic(newRateLimitConfigError(config, errorText))
-		} else {
-			skipChildren = key == "ignored_subnets"
 		}
 		if _, ok := validKeys[k.(string)]; !ok {
 			errorText := fmt.Sprintf("config error, unknown key '%s'", k)
@@ -223,9 +220,7 @@ func validateYamlKeys(config RateLimitConfigToLoad, config_map map[interface{}]i
 					panic(newRateLimitConfigError(config, errorText))
 				}
 				element := e.(map[interface{}]interface{})
-				if !skipChildren {
-					validateYamlKeys(config, element)
-				}
+				validateYamlKeys(config, element)
 			}
 		case map[interface{}]interface{}:
 			validateYamlKeys(config, v)
