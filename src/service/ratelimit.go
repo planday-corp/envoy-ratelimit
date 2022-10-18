@@ -184,7 +184,6 @@ func (this *service) shouldRateLimitWorker(
 	checkServiceErr(len(request.Descriptors) != 0, "rate limit descriptor list must not be empty")
 
 	ignoredSubnets := snappedConfig.GetIgnoredSubnets(ctx)
-	logger.Infof("These subnets needs to be ignored - %v", ignoredSubnets)
 
 	limitsToCheck, isUnlimited := this.constructLimitsToCheck(request, ctx)
 
