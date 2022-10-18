@@ -287,7 +287,7 @@ func (this *rateLimitConfigImpl) loadConfig(config RateLimitConfigToLoad) {
 	newDomain.loadDescriptors(config, root.Domain+".", root.Descriptors, this.statsManager)
 	this.domains[root.Domain] = newDomain
 
-	logger.Infof("Test - %v", root)
+	logger.Infof("Test - %v", root.IgnoredSubnets)
 
 	this.ignoredSubnets = make([]string, len(root.IgnoredSubnets))
 	for i := range root.IgnoredSubnets {
