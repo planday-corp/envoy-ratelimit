@@ -244,7 +244,7 @@ func (this *service) shouldRateLimitWorker(
 				if entry.Key == "IP" {
 					for _, subnet := range ignoredSubnets {
 						ip := net.ParseIP(entry.Value)
-						logger.Infof("Checking ip %v in subnet %s", ip, subnet.Mask.String())
+						logger.Infof("Checking ip %v in %v subnet %v", ip, subnet.IP, subnet.Mask)
 						if subnet.Contains(ip) {
 							logger.Infof("Ip is inside of subnet")
 							ignoreRateLimit = true
