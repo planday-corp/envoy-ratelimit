@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-	logger "github.com/sirupsen/logrus"
 	"time"
 
 	envoy_service_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
@@ -52,8 +51,6 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		go func() {
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
-
-			logger.Infof("Req - %t | Resp - %t", reqOk, respOk)
 
 			if reqOk && respOk {
 

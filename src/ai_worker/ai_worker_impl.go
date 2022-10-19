@@ -46,10 +46,8 @@ func (w *aiWorker) Start() {
 		for {
 			select {
 			case request := <-w.requestQueue:
-				logger.Info("Getting request from queue")
 				w.aiClient.TrackRequest(request.method, request.url, request.duration, request.statusCode)
 			case <-w.quitChannel:
-				logger.Info("Application Insight Worker hit quit channel")
 				return
 			}
 		}
