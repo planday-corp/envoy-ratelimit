@@ -3,7 +3,6 @@ package ratelimit
 import (
 	"fmt"
 	"math"
-	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -183,7 +182,7 @@ func (this *service) shouldRateLimitWorker(
 	checkServiceErr(request.Domain != "", "rate limit domain must not be empty")
 	checkServiceErr(len(request.Descriptors) != 0, "rate limit descriptor list must not be empty")
 
-	ignoredSubnets := snappedConfig.GetIgnoredSubnets(ctx)
+	//ignoredSubnets := snappedConfig.GetIgnoredSubnets(ctx)
 
 	limitsToCheck, isUnlimited := this.constructLimitsToCheck(request, ctx)
 
@@ -232,35 +231,35 @@ func (this *service) shouldRateLimitWorker(
 		}
 	}
 
-	ignoreRateLimit := false
-	if len(ignoredSubnets) > 0 {
-		for _, descriptor := range request.Descriptors {
-			for _, entry := range descriptor.Entries {
-				if ignoreRateLimit {
-					break
-				}
-				if entry.Key == "IP" {
-					for _, subnet := range ignoredSubnets {
-						ip := net.ParseIP(entry.Value)
-						if subnet.Contains(ip) {
-							ignoreRateLimit = true
-							break
-						}
-					}
-				}
-			}
-		}
-	}
+	//ignoreRateLimit := false
+	//if len(ignoredSubnets) > 0 {
+	//	for _, descriptor := range request.Descriptors {
+	//		for _, entry := range descriptor.Entries {
+	//			if ignoreRateLimit {
+	//				break
+	//			}
+	//			if entry.Key == "IP" {
+	//				for _, subnet := range ignoredSubnets {
+	//					ip := net.ParseIP(entry.Value)
+	//					if subnet.Contains(ip) {
+	//						ignoreRateLimit = true
+	//						break
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
 	// If there is a global shadow_mode, it should always return OK
 	if finalCode == pb.RateLimitResponse_OVER_LIMIT && this.globalShadowMode {
 		finalCode = pb.RateLimitResponse_OK
 		this.stats.GlobalShadowMode.Inc()
 	}
-
-	if ignoreRateLimit {
-		finalCode = pb.RateLimitResponse_OK
-	}
+	//
+	//if ignoreRateLimit {
+	//	finalCode = pb.RateLimitResponse_OK
+	//}
 
 	response.OverallCode = finalCode
 
