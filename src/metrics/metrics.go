@@ -54,6 +54,8 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 
+			logger.Infof("Req - %t | Resp - %t", reqOk, respOk)
+
 			if reqOk && respOk {
 
 				var statusCode string
