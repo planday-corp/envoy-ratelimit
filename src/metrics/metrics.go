@@ -43,6 +43,7 @@ func NewServerReporter(scope stats.Scope, aiWorker aiworker.AiWorker) *ServerRep
 func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
+		logger.Info("Are we even metric")
 
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
