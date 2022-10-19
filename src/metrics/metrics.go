@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	logger "github.com/sirupsen/logrus"
 	"time"
 
 	envoy_service_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/service/ratelimit/v3"
@@ -77,6 +78,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 					}
 				}
 
+				logger.Infof("Got ip value - %s", ipValue)
 				if ipValue != "" {
 					queue := *r.aiWorker.GetRequestQueue()
 					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), time.Since(start), statusCode)
