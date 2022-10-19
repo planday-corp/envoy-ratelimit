@@ -43,7 +43,6 @@ func NewServerReporter(scope stats.Scope, aiWorker aiworker.AiWorker) *ServerRep
 func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
-		logger.Info("Are we even metric")
 
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
@@ -51,7 +50,6 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
 		go func() {
-			return
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 
@@ -81,7 +79,6 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 					}
 				}
 
-				logger.Infof("Got ip value - %s", ipValue)
 				if ipValue != "" {
 					queue := *r.aiWorker.GetRequestQueue()
 					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), time.Since(start), statusCode)
