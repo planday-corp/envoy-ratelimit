@@ -56,12 +56,12 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 
-			if reqOk && respOk {
+			if reqOk && respOk && rlReq != nil && rlResp != nil {
 
 				defer func() {
 					r := recover()
 					if r != nil {
-						logger.Panicf("Some error: %v\nReq or resp is null. Req: %v | RlReq %p, Resp: %v | RlResp: %p - ReqOK: %t, RespOK: %t", r, req, rlReq, resp, rlResp, reqOk, respOk)
+						logger.Panicf("Some error: %v. Req or resp is null. Req: %v | RlReq %p, Resp: %v | RlResp: %p - ReqOK: %t, RespOK: %t", r, req, rlReq, resp, rlResp, reqOk, respOk)
 					}
 				}()
 
