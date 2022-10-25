@@ -50,7 +50,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
 
 		go func() {
-			if req != nil && resp != nil {
+			if req == nil || resp == nil {
 				logger.Warnf("Req or resp is null. Req: %v, Resp: %v", req, resp)
 				return
 			}
