@@ -47,9 +47,10 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		s := newServerMetrics(r.scope, info.FullMethod)
 		s.totalRequests.Inc()
 		resp, err := handler(ctx, req)
-		s.responseTime.AddValue(float64(time.Since(start).Milliseconds()))
+		requestDuration := time.Since(start)
+		s.responseTime.AddValue(float64(requestDuration.Milliseconds()))
 
-		go func(req interface{}, resp interface{}) {
+		go func(req interface{}, resp interface{}, requestDuration time.Duration) {
 			if req == nil || resp == nil {
 				logger.Warnf("Req or resp is null. Req: %v, Resp: %v", req, resp)
 				return
@@ -84,10 +85,10 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 
 				if ipValue != "" {
 					queue := *r.aiWorker.GetRequestQueue()
-					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), time.Since(start), statusCode)
+					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), requestDuration, statusCode)
 				}
 			}
-		}(req, resp)
+		}(req, resp, requestDuration)
 
 		return resp, err
 	}
