@@ -58,6 +58,13 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 
 			if reqOk && respOk {
 
+				defer func() {
+					r := recover()
+					if r != nil {
+						logger.Panicf("Some error: %v\nReq or resp is null. Req: %v, Resp: %v\"", r, req, resp)
+					}
+				}()
+
 				var statusCode string
 				switch rlResp.OverallCode {
 				case 1: // OK
