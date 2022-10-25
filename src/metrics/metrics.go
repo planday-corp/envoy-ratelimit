@@ -50,12 +50,9 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 		requestDuration := time.Since(start)
 		s.responseTime.AddValue(float64(requestDuration.Milliseconds()))
 
-		go func(req interface{}, resp interface{}, requestDuration time.Duration) {
-			if req == nil || resp == nil {
-				logger.Warnf("Req or resp is null. Req: %v, Resp: %v", req, resp)
-				return
-			}
-
+		if req == nil || resp == nil {
+			logger.Warnf("Req or resp is null. Req: %v, Resp: %v", req, resp)
+		} else {
 			rlReq, reqOk := req.(*envoy_service_ratelimit_v3.RateLimitRequest)
 			rlResp, respOk := resp.(*envoy_service_ratelimit_v3.RateLimitResponse)
 
@@ -88,7 +85,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 					queue <- aiworker.NewTrackRequest("POST", fmt.Sprintf("IP_%s", ipValue), requestDuration, statusCode)
 				}
 			}
-		}(req, resp, requestDuration)
+		}
 
 		return resp, err
 	}
