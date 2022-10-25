@@ -61,7 +61,7 @@ func (r *ServerReporter) UnaryServerInterceptor() func(ctx context.Context, req 
 				defer func() {
 					r := recover()
 					if r != nil {
-						logger.Panicf("Some error: %v\nReq or resp is null. Req: %v, Resp: %v - ReqOK: %t, RespOK: %t", r, req, resp, reqOk, respOk)
+						logger.Panicf("Some error: %v\nReq or resp is null. Req: %v | RlReq %p, Resp: %v | RlResp: %p - ReqOK: %t, RespOK: %t", r, req, rlReq, resp, rlResp, reqOk, respOk)
 					}
 				}()
 
